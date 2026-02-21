@@ -16,7 +16,7 @@
         }
         
         /* Custom Tech/Gaming Cursor - Hover/Pointer */
-        a, button, [role="button"], .cursor-pointer {
+        a, button, [role="button"], .cursor-pointer, canvas#bugJumperCanvas {
             cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='%2322d3ee' stroke='%23ffffff' stroke-width='2'%3E%3Cpath d='M3 3l7 18 4-7 7-4z'/%3E%3C/svg%3E"), pointer !important;
         }
     </style>
@@ -431,6 +431,33 @@
             </div>
         </section>
 
+        <!-- Mini Game Section -->
+        <section id="minigame" class="py-20 bg-slate-800/50 border-t border-slate-800">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <div class="mb-8 flex flex-col items-center">
+                    <h2 class="text-3xl font-bold text-white mb-4">Quick Break?</h2>
+                    <div class="w-20 h-1 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-full"></div>
+                    <p class="mt-4 text-slate-400">Help the Dev dodge the bugs! Click on the game and press <kbd class="px-2 py-1 bg-slate-800 rounded-md border border-slate-700 text-sm">Space</kbd> or tap to jump.</p>
+                </div>
+                
+                <div class="relative w-full max-w-2xl mx-auto bg-slate-900 border-2 border-slate-700 rounded-xl overflow-hidden shadow-[0_0_20px_rgba(6,182,212,0.1)] group">
+                    <!-- Game Canvas -->
+                    <canvas id="bugJumperCanvas" width="600" height="200" class="w-full h-auto block focus:outline-none" tabindex="0"></canvas>
+                    
+                    <!-- Overlays -->
+                    <div id="gameOverlay" class="absolute inset-0 bg-slate-900/80 flex flex-col items-center justify-center backdrop-blur-sm transition-opacity duration-300">
+                        <h3 id="gameTitle" class="text-2xl font-bold text-cyan-400 mb-2">Bug Jumper</h3>
+                        <p id="gameSub" class="text-slate-300 mb-6">Press Space or Tap to Start</p>
+                        <button id="startGameBtn" class="px-6 py-2 rounded-lg bg-cyan-500 text-slate-900 font-bold hover:bg-cyan-400 transition-colors shadow-[0_0_15px_rgba(6,182,212,0.3)]">Play Now</button>
+                    </div>
+                    
+                    <div class="absolute top-4 right-4 text-slate-400 font-mono text-sm font-bold bg-slate-900/50 px-3 py-1 rounded border border-slate-700 backdrop-blur-sm">
+                        Score: <span id="gameScore" class="text-cyan-400">0</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Contact Section -->
         <section id="contact" class="py-24 bg-slate-900/80 border-t border-slate-800 relative overflow-hidden">
             <!-- Decorative background elements -->
@@ -655,6 +682,220 @@
                 animate();
             }, 100);
         });
+    </script>
+
+    <!-- Bug Jumper Mini Game Logic -->
+    <script>
+        const gameCanvas = document.getElementById('bugJumperCanvas');
+        const gameCtx = gameCanvas.getContext('2d');
+        const overlay = document.getElementById('gameOverlay');
+        const title = document.getElementById('gameTitle');
+        const sub = document.getElementById('gameSub');
+        const startBtn = document.getElementById('startGameBtn');
+        const scoreEl = document.getElementById('gameScore');
+
+        let isPlaying = false;
+        let score = 0;
+        let frames = 0;
+        let gameSpeed = 4.5;
+        let reqAnimFrame;
+        let particles = []; // Ground dust particles
+
+        // Player (Developer)
+        const player = {
+            x: 50, y: 150, w: 20, h: 20,
+            dy: 0, gravity: 0.7, jumpPower: -10,
+            isGrounded: true,
+            draw() {
+                gameCtx.fillStyle = '#22d3ee'; // cyan
+                gameCtx.shadowColor = '#22d3ee';
+                gameCtx.shadowBlur = 15;
+                gameCtx.fillRect(this.x, this.y, this.w, this.h);
+                gameCtx.shadowBlur = 0; // reset
+            },
+            update() {
+                this.dy += this.gravity;
+                this.y += this.dy;
+                if (this.y + this.h >= 170) { // Ground level is 170
+                    this.y = 170 - this.h;
+                    this.dy = 0;
+                    this.isGrounded = true;
+                } else {
+                    this.isGrounded = false;
+                }
+            },
+            jump() {
+                if (this.isGrounded) {
+                    this.dy = this.jumpPower;
+                    this.isGrounded = false;
+                }
+            }
+        };
+
+        // Obstacles (Bugs)
+        const obstacles = [];
+        class Obstacle {
+            constructor() {
+                this.w = 15 + Math.random() * 10;
+                this.h = 20 + Math.random() * 25;
+                this.x = gameCanvas.width;
+                this.y = 170 - this.h;
+            }
+            draw() {
+                gameCtx.fillStyle = '#ef4444'; // red bug
+                gameCtx.shadowColor = '#ef4444';
+                gameCtx.shadowBlur = 10;
+                gameCtx.fillRect(this.x, this.y, this.w, this.h);
+                gameCtx.shadowBlur = 0;
+            }
+            update() {
+                this.x -= gameSpeed;
+            }
+        }
+
+        // Ground Particles (Speed effect)
+        class GroundParticle {
+            constructor() {
+                this.x = gameCanvas.width;
+                this.y = 175 + Math.random() * 20;
+                this.size = Math.random() * 2 + 1;
+            }
+            draw() {
+                gameCtx.fillStyle = '#475569';
+                gameCtx.fillRect(this.x, this.y, this.size, this.size);
+            }
+            update() {
+                this.x -= gameSpeed * 0.8;
+            }
+        }
+
+        function resetGame() {
+            obstacles.length = 0;
+            particles.length = 0;
+            score = 0;
+            frames = 0;
+            gameSpeed = 4.5;
+            player.y = 170 - player.h;
+            player.dy = 0;
+            scoreEl.innerText = score;
+        }
+
+        function checkCollision(p, o) {
+            // Slight padding so collisions aren't overly punishing
+            return p.x < o.x + o.w - 2 && 
+                   p.x + p.w > o.x + 2 && 
+                   p.y < o.y + o.h - 2 && 
+                   p.y + p.h > o.y + 2;
+        }
+
+        function drawBackground() {
+            // Draw Ground Line
+            gameCtx.strokeStyle = '#334155';
+            gameCtx.lineWidth = 2;
+            gameCtx.beginPath();
+            gameCtx.moveTo(0, 170);
+            gameCtx.lineTo(gameCanvas.width, 170);
+            gameCtx.stroke();
+        }
+
+        function runGameLoop() {
+            if (!isPlaying) return;
+            
+            gameCtx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+            drawBackground();
+
+            // Ground Particles logic
+            if (frames % 10 === 0) particles.push(new GroundParticle());
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                particles[i].draw();
+                if (particles[i].x < 0) particles.splice(i, 1);
+            }
+
+            player.update();
+            player.draw();
+
+            // Spawn Obstacles (randomized spacing)
+            let spawnRate = Math.max(40, 90 - Math.floor(score / 5)); // Gets faster
+            if (frames % spawnRate === 0 && Math.random() > 0.3) {
+                obstacles.push(new Obstacle());
+            }
+
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                obstacles[i].update();
+                obstacles[i].draw();
+
+                if (checkCollision(player, obstacles[i])) {
+                    triggerGameOver();
+                    return;
+                }
+
+                if (obstacles[i].x + obstacles[i].w < 0) {
+                    obstacles.splice(i, 1);
+                    score++;
+                    scoreEl.innerText = score;
+                    // Increase speed subtly
+                    if (score % 5 === 0) gameSpeed += 0.2; 
+                }
+            }
+
+            frames++;
+            reqAnimFrame = requestAnimationFrame(runGameLoop);
+        }
+
+        function triggerGameOver() {
+            isPlaying = false;
+            cancelAnimationFrame(reqAnimFrame);
+            overlay.classList.remove('hidden');
+            title.innerText = 'Game Over!';
+            title.classList.replace('text-cyan-400', 'text-red-500');
+            sub.innerText = `You dodged ${score} bugs.`;
+            startBtn.innerText = 'Try Again';
+            gameCanvas.blur();
+        }
+
+        function initiateGame() {
+            if (isPlaying) return;
+            resetGame();
+            isPlaying = true;
+            overlay.classList.add('hidden');
+            gameCanvas.focus();
+            runGameLoop();
+        }
+
+        // --- Controls ---
+        
+        // Keyboard (Spacebar / Up Arrow)
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.code === 'ArrowUp') {
+                // Prevent page scrolling ONLY if the game is active or canvas is focused
+                if (isPlaying || document.activeElement === gameCanvas) {
+                    e.preventDefault();
+                    if (!isPlaying) initiateGame();
+                    else player.jump();
+                }
+            }
+        });
+
+        // Mouse Click
+        gameCanvas.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            if (!isPlaying) initiateGame();
+            else player.jump();
+        });
+        
+        // Touch Screen
+        gameCanvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (!isPlaying) initiateGame();
+            else player.jump();
+        }, {passive: false});
+
+        startBtn.addEventListener('click', initiateGame);
+
+        // Initial render so canvas isn't blank
+        drawBackground();
+        player.draw();
     </script>
 </body>
 </html>
