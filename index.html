@@ -38,27 +38,33 @@
 
     <main>
         <!-- Hero Section -->
-        <section id="about" class="pt-32 pb-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto flex flex-col items-center text-center">
-            <div class="inline-flex items-center px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-sm text-slate-300 mb-6">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
-                Available for new opportunities
-            </div>
-            <h1 class="text-5xl md:text-7xl font-extrabold text-white tracking-tight mb-6">
-                Hi, I'm <span class="bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">Bhavesh Rathod</span>
-            </h1>
-            <h2 class="text-2xl md:text-3xl font-semibold text-slate-400 mb-8">
-                Unity Developer
-            </h2>
-            <p class="max-w-2xl text-lg text-slate-400 mb-10 leading-relaxed">
-                Transforming complex game mechanics into immersive realities. Specializing in high-performance Unity 3D, competitive multiplayer networking, and cutting-edge VR/AR experiences.
-            </p>
-            <div class="flex flex-col sm:flex-row gap-4">
-                <a href="#projects" class="px-8 py-3 rounded-lg bg-cyan-500 text-slate-900 font-semibold hover:bg-cyan-400 transition-colors flex items-center justify-center">
-                    View My Work <i data-lucide="chevron-right" class="ml-2 w-5 h-5"></i>
-                </a>
-                <a href="#contact" class="px-8 py-3 rounded-lg bg-slate-800 text-white font-semibold hover:bg-slate-700 transition-colors border border-slate-700 flex items-center justify-center">
-                    Contact Me
-                </a>
+        <section id="about" class="relative pt-32 pb-20 overflow-hidden flex flex-col items-center text-center">
+            
+            <!-- Live Canvas Background - Opacity increased to 100% -->
+            <canvas id="hero-canvas" class="absolute inset-0 w-full h-full pointer-events-none z-0 opacity-100"></canvas>
+            
+            <div class="relative z-10 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto flex flex-col items-center text-center">
+                <div class="inline-flex items-center px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-sm text-slate-300 mb-6 shadow-[0_0_15px_rgba(6,182,212,0.15)]">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
+                    Available for new opportunities
+                </div>
+                <h1 class="text-5xl md:text-7xl font-extrabold text-white tracking-tight mb-6">
+                    Hi, I'm <span class="bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">Bhavesh Rathod</span>
+                </h1>
+                <h2 class="text-2xl md:text-3xl font-semibold text-slate-400 mb-8">
+                    Unity Developer
+                </h2>
+                <p class="max-w-2xl text-lg text-slate-400 mb-10 leading-relaxed">
+                    Transforming complex game mechanics into immersive realities. Specializing in high-performance Unity 3D, competitive multiplayer networking, and cutting-edge VR/AR experiences.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <a href="#projects" class="px-8 py-3 rounded-lg bg-cyan-500 text-slate-900 font-semibold hover:bg-cyan-400 transition-colors flex items-center justify-center hover:shadow-[0_0_20px_rgba(6,182,212,0.4)]">
+                        View My Work <i data-lucide="chevron-right" class="ml-2 w-5 h-5"></i>
+                    </a>
+                    <a href="#contact" class="px-8 py-3 rounded-lg bg-slate-800 text-white font-semibold hover:bg-slate-700 transition-colors border border-slate-700 flex items-center justify-center hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]">
+                        Contact Me
+                    </a>
+                </div>
             </div>
         </section>
 
@@ -375,7 +381,7 @@
                 <div class="flex flex-col md:flex-row flex-wrap justify-center items-center gap-6">
                     <!-- Phone Direct Call Button -->
                     <!-- IMPORTANT: Replace the number in href="tel:..." below with your actual phone number -->
-                    <a href="tel:+917698718287" class="flex items-center justify-center w-full sm:w-auto px-8 py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-xl transition-all duration-300 border border-slate-700 hover:border-cyan-500/50 hover:shadow-[0_0_20px_rgba(6,182,212,0.2)] group">
+                    <a href="tel:+910000000000" class="flex items-center justify-center w-full sm:w-auto px-8 py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-xl transition-all duration-300 border border-slate-700 hover:border-cyan-500/50 hover:shadow-[0_0_20px_rgba(6,182,212,0.2)] group">
                         <div class="bg-cyan-500/10 p-2 rounded-lg mr-4 group-hover:bg-cyan-500/20 transition-colors">
                             <i data-lucide="phone" class="w-6 h-6 text-cyan-400 group-hover:scale-110 transition-transform"></i>
                         </div>
@@ -426,8 +432,162 @@
 
     <!-- Initialize Icons -->
     <script>
-        // Render all Lucide icons onto the page
         lucide.createIcons();
+    </script>
+
+    <!-- Upgraded Interactive Game-Dev Canvas -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const canvas = document.getElementById('hero-canvas');
+            const ctx = canvas.getContext('2d');
+            const heroSection = document.getElementById('about');
+
+            let particlesArray = [];
+            
+            // Mouse properties for physics interactions
+            let mouse = {
+                x: null,
+                y: null,
+                radius: 150 // Radius where particles will bounce away
+            };
+
+            // Track mouse accurately across the window
+            window.addEventListener('mousemove', function(event) {
+                const rect = canvas.getBoundingClientRect();
+                mouse.x = event.clientX - rect.left;
+                mouse.y = event.clientY - rect.top;
+            });
+
+            window.addEventListener('mouseout', function() {
+                mouse.x = null;
+                mouse.y = null;
+            });
+
+            // Set canvas size matching the parent perfectly
+            function resizeCanvas() {
+                const rect = heroSection.getBoundingClientRect();
+                canvas.width = rect.width;
+                canvas.height = rect.height;
+                initParticles();
+            }
+
+            window.addEventListener('resize', resizeCanvas);
+
+            // Particle Object class
+            class Particle {
+                constructor(x, y, dx, dy, size, color) {
+                    this.x = x;
+                    this.y = y;
+                    this.dx = dx;
+                    this.dy = dy;
+                    this.size = size;
+                    this.color = color;
+                    // Store original positions to allow them to drift back slightly
+                    this.baseX = this.x;
+                    this.baseY = this.y;
+                }
+                
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2, false);
+                    ctx.fillStyle = this.color;
+                    ctx.fill();
+                }
+                
+                update() {
+                    // Standard floating movement
+                    this.x += this.dx;
+                    this.y += this.dy;
+
+                    // Bounce off edges of the section
+                    if (this.x > canvas.width || this.x < 0) this.dx = -this.dx;
+                    if (this.y > canvas.height || this.y < 0) this.dy = -this.dy;
+
+                    // --- Mouse Physics Interaction (Repel effect) ---
+                    if (mouse.x != null && mouse.y != null) {
+                        let dx = mouse.x - this.x;
+                        let dy = mouse.y - this.y;
+                        let distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < mouse.radius) {
+                            // Calculate push force
+                            const forceDirectionX = dx / distance;
+                            const forceDirectionY = dy / distance;
+                            const force = (mouse.radius - distance) / mouse.radius;
+                            
+                            // Apply push multiplier
+                            const directionX = forceDirectionX * force * 4;
+                            const directionY = forceDirectionY * force * 4;
+                            
+                            this.x -= directionX;
+                            this.y -= directionY;
+                        }
+                    }
+                    this.draw();
+                }
+            }
+
+            // Create particle network
+            function initParticles() {
+                particlesArray = [];
+                // Dynamic amount based on screen size (denser than before)
+                let numberOfParticles = Math.floor((canvas.width * canvas.height) / 7000);
+                
+                // Prevent lag on massive screens
+                if (numberOfParticles > 250) numberOfParticles = 250;
+
+                const colors = ['#22d3ee', '#a855f7', '#818cf8']; // Cyan, Purple, Indigo
+
+                for (let i = 0; i < numberOfParticles; i++) {
+                    let size = (Math.random() * 2) + 1.5;
+                    let x = Math.random() * canvas.width;
+                    let y = Math.random() * canvas.height;
+                    let dx = (Math.random() - 0.5) * 1.5; // X drift speed
+                    let dy = (Math.random() - 0.5) * 1.5; // Y drift speed
+                    let color = colors[Math.floor(Math.random() * colors.length)];
+                    
+                    particlesArray.push(new Particle(x, y, dx, dy, size, color));
+                }
+            }
+
+            // Draw glowing lines between nearby particles
+            function connectParticles() {
+                for (let a = 0; a < particlesArray.length; a++) {
+                    for (let b = a; b < particlesArray.length; b++) {
+                        let dx = particlesArray[a].x - particlesArray[b].x;
+                        let dy = particlesArray[a].y - particlesArray[b].y;
+                        let distance = dx * dx + dy * dy;
+
+                        // If close enough, draw line (approx 120 pixels)
+                        if (distance < 14400) { 
+                            let opacity = 1 - (distance / 14400);
+                            ctx.strokeStyle = `rgba(34, 211, 238, ${opacity * 0.4})`; // Glowing cyan lines
+                            ctx.lineWidth = 1.2;
+                            ctx.beginPath();
+                            ctx.moveTo(particlesArray[a].x, particlesArray[a].y);
+                            ctx.lineTo(particlesArray[b].x, particlesArray[b].y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+            }
+
+            // Continuous animation loop
+            function animate() {
+                requestAnimationFrame(animate);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                particlesArray.forEach(particle => particle.update());
+                connectParticles();
+            }
+
+            // Adding a small delay ensures Tailwind's layout is completely fully painted
+            // before we try to measure the height of the section.
+            setTimeout(() => {
+                resizeCanvas();
+                animate();
+            }, 100);
+        });
     </script>
 </body>
 </html>
